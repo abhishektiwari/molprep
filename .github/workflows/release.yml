@@ -192,7 +192,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: dist/**/*
         tag_name: ${{ needs.generate-version.outputs.github_tag }}
-        name: ${{ needs.generate-version.outputs.is_prerelease == 'true' && 'Pre-release' || 'Release' }} ${{ needs.generate-version.outputs.github_tag }}
+        name: ${{ needs.generate-version.outputs.github_tag }}
         body: |
           ${{ needs.generate-version.outputs.is_prerelease == 'true' && format('🚧 **Pre-release build for PR #{0}**', needs.generate-version.outputs.pr_number) || '🎉 **New Release**' }}
           
@@ -226,11 +226,13 @@ jobs:
         PR_NUMBER: ${{ needs.generate-version.outputs.pr_number }}
         RELEASE_TAG: ${{ needs.generate-version.outputs.github_tag }}
         PACKAGE_VERSION: ${{ needs.generate-version.outputs.version }}
+        REPOSITORY: ${{ github.repository }}
       with:
         script: |
           const prNumber = Number.parseInt(process.env.PR_NUMBER, 10);
           const tag = process.env.RELEASE_TAG;
           const version = process.env.PACKAGE_VERSION;
+          const repository = process.env.REPOSITORY;
           
           const comment = `## 🚧 Pre-release Ready
           
@@ -238,20 +240,30 @@ jobs:
           
           ### Quick Install
           
-          **From PyPI (recommended):**
+          **From PyPI with uv (recommended):**
+          \`\`\`bash
+          uv add "molprep==${version}"
+          \`\`\`
+
+          **From PyPI with pip:**
           \`\`\`bash
           pip install molprep==${version}
           \`\`\`
-          
-          **From GitHub Release:**
+
+          **From GitHub Release with uv:**
           \`\`\`bash
-          pip install https://github.com/${{ github.repository }}/releases/download/${tag}/molprep-${version}-py3-none-any.whl
+          uv add "molprep @ https://github.com/${repository}/releases/download/${tag}/molprep-${version}-py3-none-any.whl"
+          \`\`\`
+
+          **From GitHub Release with pip:**
+          \`\`\`bash
+          pip install https://github.com/${repository}/releases/download/${tag}/molprep-${version}-py3-none-any.whl
           \`\`\`
           
           ### Available Artifacts
           - **Python**: wheel and source distribution
           
-          View all artifacts at: https://github.com/${{ github.repository }}/releases/tag/${tag}
+          View all artifacts at: https://github.com/${repository}/releases/tag/${tag}
           `;
           
           github.rest.issues.createComment({
