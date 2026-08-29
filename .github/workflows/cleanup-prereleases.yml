@@ -12,6 +12,8 @@ on:
         default: '7'
         type: string
 
+permissions: {}
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
@@ -19,13 +21,13 @@ jobs:
       contents: write
     
     steps:
-    - uses: actions/checkout@v4
-    
     - name: Clean up old pre-releases
-      uses: actions/github-script@v7
+      uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+      env:
+        DAYS_TO_KEEP: ${{ github.event.inputs.days_to_keep || '7' }}
       with:
         script: |
-          const daysToKeep = parseInt('${{ github.event.inputs.days_to_keep || '7' }}');
+          const daysToKeep = Number.parseInt(process.env.DAYS_TO_KEEP, 10);
           const cutoffDate = new Date();
           cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
           
@@ -39,10 +41,11 @@ jobs:
           });
           
           let deletedCount = 0;
+          const managedPrereleaseTag = /^(?:v\d+\.\d+\.\d+rc\d+|v\d+\.\d+\.\d+-pr\d+)$/;
           
           for (const release of releases.data) {
-            // Only process pre-releases with PR tags
-            if (release.prerelease && release.tag_name.includes('-pr')) {
+            // Process current PEP 440 PR tags and legacy -pr tags.
+            if (release.prerelease && managedPrereleaseTag.test(release.tag_name)) {
               const releaseDate = new Date(release.created_at);
               
               if (releaseDate < cutoffDate) {

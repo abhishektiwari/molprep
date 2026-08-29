@@ -1,15 +1,17 @@
-.PHONY: help clean clean-build clean-pyc clean-test format lint test test-all coverage install install-dev build publish
+.PHONY: help clean clean-build clean-pyc clean-test install install-dev format lint typecheck check test test-all coverage build publish
 
 .DEFAULT_GOAL := help
 
 help:
 	@echo "Available commands:"
-	@echo "  make install        Install package in production mode"
-	@echo "  make install-dev    Install package in development mode with dev dependencies"
-	@echo "  make format         Format code with black and isort"
-	@echo "  make lint           Check code quality with flake8 and mypy"
+	@echo "  make install        Sync production dependencies with uv"
+	@echo "  make install-dev    Sync development dependencies with uv"
+	@echo "  make format         Fix and format code with Ruff"
+	@echo "  make lint           Check linting and formatting with Ruff"
+	@echo "  make typecheck      Type-check code with ty"
+	@echo "  make check          Run linting, type checking, and tests"
 	@echo "  make test           Run tests with pytest"
-	@echo "  make test-all       Run tests on multiple Python versions with tox"
+	@echo "  make test-all       Run tests on all supported Python versions with uv"
 	@echo "  make coverage       Generate test coverage report"
 	@echo "  make build          Build source and wheel distributions"
 	@echo "  make clean          Remove all build, test, and Python artifacts"
@@ -31,39 +33,45 @@ clean-pyc:
 	find . -name '__pycache__' -exec rm -fr {} +
 
 clean-test:
-	rm -fr .tox/
+	rm -fr .ruff_cache/
 	rm -f .coverage
 	rm -fr htmlcov/
 	rm -fr .pytest_cache/
 
 install:
-	pip install -e .
+	uv sync --no-dev
 
 install-dev:
-	pip install -e ".[dev]"
+	uv sync
 
 format:
-	black molprep tests
-	isort molprep tests
+	uv run ruff check --fix molprep tests
+	uv run ruff format molprep tests
 
 lint:
-	flake8 molprep tests
-	mypy molprep
-	black --check molprep tests
-	isort --check-only molprep tests
+	uv run ruff check molprep tests
+	uv run ruff format --check molprep tests
+
+typecheck:
+	uv run ty check
+
+check: lint typecheck test
 
 test:
-	pytest
+	uv run pytest
 
 test-all:
-	tox
+	@for version in 3.9 3.10 3.11 3.12 3.13 3.14; do \
+		echo "Testing with Python $$version"; \
+		uv run --isolated --python $$version pytest || exit 1; \
+	done
 
 coverage:
-	pytest --cov=molprep --cov-report=html --cov-report=term-missing
+	uv run pytest --cov=molprep --cov-report=html --cov-report=term-missing
 	@echo "Coverage report generated in htmlcov/index.html"
 
 build: clean
-	python -m build
+	uv build
 
 publish: build
-	python -m twine upload dist/*
+	uv publish dist/*

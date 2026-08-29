@@ -1,10 +1,12 @@
 """Basic tests for molprep package."""
 
+
 def test_package_import():
     """Test that the main package can be imported."""
     import molprep
 
     assert molprep is not None
+
 
 def test_version():
     """Test that package has a version."""

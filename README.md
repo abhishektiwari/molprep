@@ -5,6 +5,14 @@ A Python package designed to streamline the preparation of protein structures an
 
 ## Installation
 
+Using uv:
+
+```bash
+uv add molprep
+```
+
+Using pip:
+
 ```bash
 pip install molprep
 ```
@@ -14,5 +22,12 @@ pip install molprep
 ```bash
 git clone https://github.com/abhishektiwari/molprep.git
 cd molprep
-pip install -e ".[dev]"
+uv sync
+```
+
+Run the development checks through the locked uv environment:
+
+```bash
+make format
+make check
 ```
