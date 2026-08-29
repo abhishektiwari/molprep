@@ -14,5 +14,12 @@ pip install molprep
 ```bash
 git clone https://github.com/abhishektiwari/molprep.git
 cd molprep
-pip install -e ".[dev]"
+uv sync
+```
+
+Run the development checks through the locked uv environment:
+
+```bash
+make format
+make check
 ```

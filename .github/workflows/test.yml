@@ -6,28 +6,33 @@ on:
   pull_request:
     branches: [ main]
 
+permissions: {}
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        persist-credentials: false
+
+    - name: Set up uv and Python ${{ matrix.python-version }}
+      uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
       with:
         python-version: ${{ matrix.python-version }}
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev]"
-    
-    - name: Format code
-      run: make format
-    
+        enable-cache: true
+
+    - name: Sync dependencies
+      run: uv sync --locked
+
+    - name: Check code quality
+      run: make lint typecheck
+
     - name: Run tests
       run: make test
